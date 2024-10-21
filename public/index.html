@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+            background-color: #f4f4f4;
+        }
+        input {
+            padding: 10px;
+            width: 300px;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            cursor: pointer;
+        }
+        .result {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>URL Shortener</h1>
+    <form id="urlForm">
+        <input type="text" id="originalUrl" placeholder="Enter your URL here" required />
+        <button type="submit">Shorten URL</button>
+    </form>
+
+    <div class="result" id="result"></div>
+
+    <script>
+        const form = document.getElementById('urlForm');
+        const resultDiv = document.getElementById('result');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const originalUrl = document.getElementById('originalUrl').value;
+
+            const response = await fetch('/shorten', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ originalUrl })
+            });
+
+            const data = await response.text();
+            resultDiv.innerHTML = data;
+        });
+    </script>
+
+</body>
+</html>
