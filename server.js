@@ -1,29 +1,14 @@
 const express = require('express');
 const ShortId = require('shortid');
-const sqlite3 = require('sqlite3').verbose();
+const db = require('./database'); // Import the database connection
 const path = require('path');
 
 const app = express();
 
-// Middleware to parse JSON body
+// Middleware to parse JSON body and URL-encoded data
 app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // for form data
-app.use(express.static(path.join(__dirname, 'public'))); // serve static files
-
-// Create or open the database
-const db = new sqlite3.Database('./urls.db', (err) => {
-    if (err) {
-        console.error(err.message);
-    }
-    console.log('Connected to the SQLite database.');
-});
-
-// Create a table if it doesn't exist
-db.run(`CREATE TABLE IF NOT EXISTS urls (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    originalUrl TEXT NOT NULL,
-    shortUrl TEXT NOT NULL
-)`);
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public'))); // Serve static files
 
 // Route for shortening the URL
 app.post('/shorten', (req, res) => {
@@ -36,12 +21,10 @@ app.post('/shorten', (req, res) => {
     const sql = `INSERT INTO urls (originalUrl, shortUrl) VALUES (?, ?)`;
     db.run(sql, [originalUrl, `http://localhost:5000/${shortUrl}`], function(err) {
         if (err) {
-            return console.log(err.message);
+            return res.status(500).json({ error: 'Error saving the URL' });
         }
-        res.render('index', {
-            originalUrl,
-            shortUrl: `http://localhost:5000/${shortUrl}`
-        });
+        // Return the shortened URL as JSON
+        res.json({ originalUrl, shortUrl: `http://localhost:5000/${shortUrl}` });
     });
 });
 
@@ -53,7 +36,7 @@ app.get('/:shortUrl', (req, res) => {
     const sql = `SELECT originalUrl FROM urls WHERE shortUrl = ?`;
     db.get(sql, [`http://localhost:5000/${shortUrl}`], (err, row) => {
         if (err) {
-            return console.error(err.message);
+            return res.status(500).json({ error: 'Database error' });
         }
         if (row) {
             return res.redirect(row.originalUrl);
